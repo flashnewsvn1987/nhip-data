@@ -1,0 +1,64 @@
+# DÒ LẦN 2 — từ điển tên khoản mục thuyết minh (Vietcap IQ) -> data/probe-notes2.json
+# Đặt tại: .github/workflows/probe-notes2.yml  (file mới, KHÔNG đè file cũ). Chạy tay: Actions > probe-notes2 > Run workflow.
+# Lần 1 đã xác nhận: .../company/FPT/financial-statement?section=NOTE trả dữ liệu thật (các trường noc1, noc2, ... theo năm/quý) nhưng CHƯA có tên khoản mục.
+# Lần này dò nơi chứa tên (suy đoán, chưa xác nhận) và lưu danh sách trường của NOTE.
+name: probe-notes2
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Do nguon 2
+        run: |
+          node --input-type=module - <<'EOF'
+          import fs from 'node:fs';
+          const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+          const B = 'https://iq.vietcap.com.vn/api/iq-insight-service/v1';
+          const H = { Accept: 'application/json', 'User-Agent': UA, Origin: 'https://trading.vietcap.com.vn', Referer: 'https://trading.vietcap.com.vn/' };
+          const out = { built: new Date().toISOString(), tries: [] };
+          const get = async u => { try { const r = await fetch(u, { headers: H }); const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (e) { } return { status: r.status, bytes: t.length, j, txt: t.slice(0, 300) }; } catch (e) { return { status: 0, bytes: 0, err: String(e && e.message || e) }; } };
+          /* 1) NOTE đầy đủ của FPT: liệt kê tên trường, mẫu 1 quý gần nhất */
+          const n = await get(B + '/company/FPT/financial-statement?section=NOTE');
+          const q = n.j && n.j.data && n.j.data.quarters || [], y = n.j && n.j.data && n.j.data.years || [];
+          const keys = new Set(); for (const r of q.concat(y)) for (const k of Object.keys(r)) keys.add(k);
+          out.noteKeys = [...keys];
+          out.noteLatestQuarter = q[0] || null;
+          out.noteQuarterOrder = q.slice(0, 3).map(r => r.yearReport + '/Q' + r.lengthReport);
+          console.log('NOTE: quý', q.length, 'năm', y.length, 'số trường', keys.size);
+          /* 2) dò từ điển tên (các địa chỉ suy đoán) */
+          const cand = [
+            '/company/FPT/financial-statement/metrics',
+            '/company/FPT/financial-statement/metrics?section=NOTE',
+            '/company/FPT/financial-statement-metrics',
+            '/company/FPT/financial-statement/metric',
+            '/financial-statement/metrics',
+            '/financial-statement/metrics?section=NOTE',
+            '/company/FPT/financial-statement?section=NOTE&metrics=true',
+          ];
+          for (const c of cand) {
+            const r = await get(B + c);
+            const row = { url: B + c, status: r.status, bytes: r.bytes };
+            if (r.j) { const d = r.j.data !== undefined ? r.j.data : r.j; row.msg = r.j.msg; row.topKeys = d && typeof d === 'object' ? Object.keys(d).slice(0, 15) : typeof d; row.preview = JSON.stringify(d).slice(0, 700); if (d && !Array.isArray(d) && d.NOTE) { row.noteCount = d.NOTE.length; row.noteSample = JSON.stringify(d.NOTE.slice(0, 5)); } }
+            else row.preview = r.txt;
+            out.tries.push(row); console.log(r.status, r.bytes, c, row.msg || '');
+            await new Promise(r => setTimeout(r, 400));
+          }
+          fs.mkdirSync('data', { recursive: true });
+          fs.writeFileSync('data/probe-notes2.json', JSON.stringify(out, null, 2));
+          EOF
+      - name: Luu ket qua
+        if: always()
+        run: |
+          git config user.name "fx-bot"
+          git config user.email "fx-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || (git commit -m "probe notes2 $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
+          
