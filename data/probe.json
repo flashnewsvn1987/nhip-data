@@ -1,5 +1,5 @@
 {
- "at": "2026-10-29T02:58:35.678Z",
+ "at": "2026-10-29T03:04:56.912Z",
  "ssi": [
   {
    "ex": "hose",
@@ -253,8 +253,8 @@
    "sellQ": "matchPrice.foreignSellVolume",
    "buyV": "matchPrice.foreignBuyValue",
    "sellV": "matchPrice.foreignSellValue",
-   "room": null,
-   "totalRoom": null,
+   "room": "matchPrice.currentRoom",
+   "totalRoom": "matchPrice.totalRoom",
    "tradedQ": "matchPrice.accumulatedVolume",
    "tradedV": "matchPrice.accumulatedValue"
   }
