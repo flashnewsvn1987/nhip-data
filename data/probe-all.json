@@ -1,13 +1,13 @@
 {
- "at": "2026-10-29T04:02:44.735Z",
+ "at": "2026-10-29T04:06:05.292Z",
  "results": [
   {
    "id": "vietcap-getList",
    "note": "Bảng giá Vietcap (đang dùng làm dự phòng)",
    "url": "https://trading.vietcap.com.vn/api/price/symbols/getList",
    "status": 200,
-   "ms": 2111,
-   "bytes": 8038,
+   "ms": 2067,
+   "bytes": 8041,
    "keys": [
     "listingInfo.code",
     "listingInfo.symbol",
@@ -118,11 +118,11 @@
    "foreignKeys": {
     "listingInfo.enOrganName": "FPT Corporation",
     "listingInfo.organName": "Công ty Cổ phần FPT",
-    "matchPrice.currentRoom": 376887560,
-    "matchPrice.foreignBuyVolume": 183678,
-    "matchPrice.foreignSellVolume": 1849900,
-    "matchPrice.foreignBuyValue": 9900024000,
-    "matchPrice.foreignSellValue": 98978510000,
+    "matchPrice.currentRoom": 376887160,
+    "matchPrice.foreignBuyVolume": 188578,
+    "matchPrice.foreignSellVolume": 1916000,
+    "matchPrice.foreignBuyValue": 10159064000,
+    "matchPrice.foreignSellValue": 102474860000,
     "matchPrice.totalRoom": 840019946
    }
   },
@@ -131,7 +131,7 @@
    "note": "Vietcap top-stock (theo repo LySyaoran/API-Vietcap-Price)",
    "url": "https://trading.vietcap.com.vn/api/market-data-service/v1/tickers/price/top-stock",
    "status": 200,
-   "ms": 241,
+   "ms": 294,
    "bytes": 921,
    "keys": [
     "ticker",
@@ -147,14 +147,14 @@
     "tickerType"
    ],
    "foreignKeys": {},
-   "snippet": "{\"timestamp\":\"2026-10-29T04:02:46.98191741Z\",\"success\":true,\"data\":[{\"ticker\":\"FPT\",\"matchPrice\":53000.0,\"ceiling\":57700.0,\"floor\":50300.0,\"refPrice\":54000.0,\"accumulatedValue\":320335.86,\"accumulatedVolume\":5986800.0,\"tradingDate\":\"2026-10-29\",\"latestMatchPriceTime\":\"2026-10-29T04:02:45.477Z\",\"tradi"
+   "snippet": "{\"timestamp\":\"2026-10-29T04:06:07.527548642Z\",\"success\":true,\"data\":[{\"ticker\":\"FPT\",\"matchPrice\":52800.0,\"ceiling\":57700.0,\"floor\":50300.0,\"refPrice\":54000.0,\"accumulatedValue\":345447.6,\"accumulatedVolume\":6461100.0,\"tradingDate\":\"2026-10-29\",\"latestMatchPriceTime\":\"2026-10-29T04:06:05.769Z\",\"tradi"
   },
   {
    "id": "ssi-graphql-1",
    "note": "SSI GraphQL host 1",
    "url": "https://wgateway-iboard.ssi.com.vn/graphql",
    "status": 0,
-   "ms": 454,
+   "ms": 894,
    "err": "fetch failed"
   },
   {
@@ -172,7 +172,7 @@
    "note": "SSI REST HNX (Worker đang dùng)",
    "url": "https://iboard-query.ssi.com.vn/stock/exchange/hnx",
    "status": 403,
-   "ms": 525,
+   "ms": 520,
    "bytes": 26525,
    "notJson": true,
    "snippet": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"robots\" content=\"noindex, nofollow\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n<"
@@ -182,7 +182,7 @@
    "note": "CHƯA XÁC NHẬN: SSI REST 1 mã",
    "url": "https://iboard-query.ssi.com.vn/v2/stock/fpt",
    "status": 403,
-   "ms": 49,
+   "ms": 54,
    "bytes": 26525,
    "notJson": true,
    "snippet": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"robots\" content=\"noindex, nofollow\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n<"
@@ -192,8 +192,8 @@
    "note": "VNDirect giá (api-finfo chạy được từ Worker theo ghi chú bản 20)",
    "url": "https://api-finfo.vndirect.com.vn/v4/stock_prices?q=code:FPT&size=2&sort=date:desc",
    "status": 200,
-   "ms": 743,
-   "bytes": 927,
+   "ms": 719,
+   "bytes": 926,
    "keys": [
     "code",
     "date",
@@ -222,15 +222,15 @@
     "pctChange"
    ],
    "foreignKeys": {},
-   "snippet": "{\"data\":[{\"code\":\"FPT\",\"date\":\"2026-10-29\",\"time\":\"11:01:58\",\"floor\":\"HOSE\",\"type\":\"STOCK\",\"basicPrice\":54.0,\"ceilingPrice\":57.7,\"floorPrice\":50.3,\"open\":54.5,\"high\":54.8,\"low\":53.0,\"close\":53.0,\"average\":53.5184313457564,\"adOpen\":54.5,\"adHigh\":54.8,\"adLow\":53.0,\"adClose\":53.0,\"adAverage\":53.5184313"
+   "snippet": "{\"data\":[{\"code\":\"FPT\",\"date\":\"2026-10-29\",\"time\":\"11:04:59\",\"floor\":\"HOSE\",\"type\":\"STOCK\",\"basicPrice\":54.0,\"ceilingPrice\":57.7,\"floorPrice\":50.3,\"open\":54.5,\"high\":54.8,\"low\":52.8,\"close\":52.9,\"average\":53.4711250565885,\"adOpen\":54.5,\"adHigh\":54.8,\"adLow\":52.8,\"adClose\":52.9,\"adAverage\":53.4711250"
   },
   {
    "id": "vnd-foreigns",
    "note": "CHƯA XÁC NHẬN: VNDirect khối ngoại theo ngày",
    "url": "https://api-finfo.vndirect.com.vn/v4/foreigns?q=code:FPT&size=2&sort=tradingDate:desc",
    "status": 200,
-   "ms": 376,
-   "bytes": 568,
+   "ms": 1128,
+   "bytes": 571,
    "keys": [
     "code",
     "type",
@@ -247,7 +247,7 @@
    ],
    "foreignKeys": {
     "totalRoom": 840019946,
-    "currentRoom": 376887560
+    "currentRoom": 376887160
    }
   },
   {
@@ -255,7 +255,7 @@
    "note": "CHƯA XÁC NHẬN: VNDirect khối ngoại (finfo-api)",
    "url": "https://finfo-api.vndirect.com.vn/v4/foreigns?q=code:FPT&size=2&sort=tradingDate:desc",
    "status": 0,
-   "ms": 10118,
+   "ms": 10491,
    "err": "fetch failed"
   }
  ]
