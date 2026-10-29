@@ -1,0 +1,62 @@
+# DÒ nguồn THUYẾT MINH BCTC (Vietcap IQ) -> data/probe-notes.json
+# Đặt tại: .github/workflows/probe-notes.yml
+# Chạy tay: Actions > probe-notes > Run workflow. Chạy xong mở log (bước "Do nguon") hoặc file data/probe-notes.json rồi gửi lại cho mình.
+# Đây chỉ là BƯỚC DÒ: các địa chỉ bên dưới là suy đoán từ cách thư viện vnstock gọi Vietcap, CHƯA được xác nhận.
+name: probe-notes
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Do nguon
+        run: |
+          node --input-type=module - <<'EOF'
+          import fs from 'node:fs';
+          const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+          const B = 'https://iq.vietcap.com.vn';
+          const H = { Accept: 'application/json', 'User-Agent': UA, Origin: 'https://trading.vietcap.com.vn', Referer: 'https://trading.vietcap.com.vn/' };
+          const SYMS = ['FPT', 'VCB'];
+          const SECTIONS = ['BALANCE_SHEET', 'NOTE', 'NOTES', 'NOTE_BS', 'NOTE_IS', 'FINANCIAL_NOTE'];
+          const urls = [];
+          for (const s of SYMS) for (const sec of SECTIONS) urls.push({ s, sec, u: `${B}/api/iq-insight-service/v1/company/${s}/financial-statement?section=${sec}` });
+          urls.push({ s: 'FPT', sec: 'metrics', u: `${B}/api/iq-insight-service/v1/statistics-financial` });
+          const out = { built: new Date().toISOString(), note: 'Dò địa chỉ chưa xác nhận', results: [] };
+          const shape = (j, d = 0) => {
+            if (Array.isArray(j)) return { type: 'array', length: j.length, first: j.length && d < 2 ? shape(j[0], d + 1) : null };
+            if (j && typeof j === 'object') { const o = {}; for (const k of Object.keys(j).slice(0, 25)) o[k] = d < 2 ? shape(j[k], d + 1) : typeof j[k]; return o; }
+            return typeof j === 'string' ? 'string:' + j.slice(0, 40) : typeof j;
+          };
+          for (const t of urls) {
+            const row = { symbol: t.s, section: t.sec, url: t.u };
+            try {
+              const r = await fetch(t.u, { headers: H });
+              row.status = r.status;
+              const txt = await r.text(); row.bytes = txt.length;
+              try { const j = JSON.parse(txt); row.shape = shape(j); const d = j && j.data; if (d && typeof d === 'object') { const first = JSON.stringify(d).slice(0, 600); row.dataPreview = first; } }
+              catch (e) { row.preview = txt.slice(0, 200); }
+            } catch (e) { row.error = String(e && e.message || e); }
+            out.results.push(row);
+            console.log(t.s, t.sec, row.status || row.error, row.bytes || '');
+            await new Promise(r => setTimeout(r, 400));
+          }
+          fs.mkdirSync('data', { recursive: true });
+          fs.writeFileSync('data/probe-notes.json', JSON.stringify(out, null, 2));
+          const ok = out.results.filter(r => r.status === 200 && /^NOTE|NOTES|NOTE_|FINANCIAL_NOTE/.test(r.section));
+          console.log('Mục thuyết minh trả 200:', ok.map(r => r.symbol + ':' + r.section).join(', ') || 'không có');
+          EOF
+      - name: Luu ket qua
+        if: always()
+        run: |
+          git config user.name "fx-bot"
+          git config user.email "fx-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || (git commit -m "probe notes $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
+          
