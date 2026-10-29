@@ -1,62 +1,101 @@
-# Dò nhiều API khối ngoại/room từ máy chủ GitHub, ghi kết quả vào data/probe-all.json
-# Đặt tại: .github/workflows/probe-api.yml  -> Actions > probe-api > Run workflow (chạy tay, trong giờ giao dịch 09:00-15:00)
-name: probe-api
+# Dựng LỊCH SỬ khối ngoại (số đã chốt cuối phiên, ~1 năm) -> data/history.json
+# Đặt tại: .github/workflows/history.yml
+# Chạy tay lần đầu: Actions > fetch-history > Run workflow. Sau đó tự chạy 16:30 giờ VN, thứ 2-6.
+name: fetch-history
 on:
+  schedule:
+    - cron: '30 9 * * 1-5'
   workflow_dispatch: {}
 permissions:
   contents: write
+concurrency:
+  group: fxh
+  cancel-in-progress: false
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Do API
+      - name: Dung lich su khoi ngoai
         run: |
           node --input-type=module - <<'EOF'
           import fs from 'node:fs';
           const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-          const V = 'https://trading.vietcap.com.vn';
-          const SYM = ['FPT', 'SHS', 'BSR'];
-          const JH = o => Object.assign({ 'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': UA }, o || {});
-          const C = [
-            { id: 'vietcap-getList', note: 'Bảng giá Vietcap (đang dùng làm dự phòng)', url: V + '/api/price/symbols/getList', method: 'POST', body: { symbols: SYM }, headers: JH({ Origin: V, Referer: V + '/' }) },
-            { id: 'vietcap-top-stock', note: 'Vietcap top-stock (theo repo LySyaoran/API-Vietcap-Price)', url: V + '/api/market-data-service/v1/tickers/price/top-stock', method: 'POST', body: { tickers: SYM }, headers: JH({ Origin: V, Referer: V + '/' }) },
-            { id: 'ssi-graphql-1', note: 'SSI GraphQL host 1', url: 'https://wgateway-iboard.ssi.com.vn/graphql', method: 'POST', body: { operationName: 'stockRealtimes', variables: { exchange: 'hnx' }, query: 'query stockRealtimes($exchange: String) { stockRealtimes(exchange: $exchange) { stockSymbol exchange buyForeignQtty sellForeignQtty buyForeignValue sellForeignValue remainForeignQtty } }' }, headers: JH({ Origin: 'https://iboard.ssi.com.vn', Referer: 'https://iboard.ssi.com.vn/' }) },
-            { id: 'ssi-graphql-2', note: 'SSI GraphQL host 2', url: 'https://iboard.ssi.com.vn/gateway/graphql', method: 'POST', body: { operationName: 'stockRealtimes', variables: { exchange: 'hnx' }, query: 'query stockRealtimes($exchange: String) { stockRealtimes(exchange: $exchange) { stockSymbol exchange buyForeignQtty sellForeignQtty buyForeignValue sellForeignValue remainForeignQtty } }' }, headers: JH({ Origin: 'https://iboard.ssi.com.vn', Referer: 'https://iboard.ssi.com.vn/' }) },
-            { id: 'ssi-rest-hnx', note: 'SSI REST HNX (Worker đang dùng)', url: 'https://iboard-query.ssi.com.vn/stock/exchange/hnx', method: 'GET', headers: JH() },
-            { id: 'ssi-rest-fpt', note: 'CHƯA XÁC NHẬN: SSI REST 1 mã', url: 'https://iboard-query.ssi.com.vn/v2/stock/fpt', method: 'GET', headers: JH() },
-            { id: 'vnd-stock-prices', note: 'VNDirect giá (api-finfo chạy được từ Worker theo ghi chú bản 20)', url: 'https://api-finfo.vndirect.com.vn/v4/stock_prices?q=code:FPT&size=2&sort=date:desc', method: 'GET', headers: JH() },
-            { id: 'vnd-foreigns', note: 'CHƯA XÁC NHẬN: VNDirect khối ngoại theo ngày', url: 'https://api-finfo.vndirect.com.vn/v4/foreigns?q=code:FPT&size=2&sort=tradingDate:desc', method: 'GET', headers: JH() },
-            { id: 'vnd-foreigns-2', note: 'CHƯA XÁC NHẬN: VNDirect khối ngoại (finfo-api)', url: 'https://finfo-api.vndirect.com.vn/v4/foreigns?q=code:FPT&size=2&sort=tradingDate:desc', method: 'GET', headers: JH() }
-          ];
-          const flat = (o, p, out, d = 0) => { if (d > 4) return out; for (const k of Object.keys(o || {})) { const v = o[k], path = p ? p + '.' + k : k; if (Array.isArray(v)) { if (v.length && typeof v[0] === 'object') flat(v[0], path + '[0]', out, d + 1); } else if (v && typeof v === 'object') flat(v, path, out, d + 1); else out[path] = v; } return out; };
-          const first = j => Array.isArray(j) ? j[0] : (j && (Array.isArray(j.data) ? j.data[0] : Array.isArray(j.content) ? j.content[0] : (j.data && Array.isArray(j.data.stockRealtimes) ? j.data.stockRealtimes[0] : (j.data && typeof j.data === 'object' ? j.data : j)))) || null;
-          const out = { at: new Date().toISOString(), results: [] };
-          for (const c of C) {
-            const r0 = { id: c.id, note: c.note, url: c.url, status: 0, ms: 0 };
-            const t0 = Date.now();
-            try {
-              const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 12000);
-              const r = await fetch(c.url, { method: c.method, headers: c.headers, body: c.body ? JSON.stringify(c.body) : undefined, signal: ac.signal });
-              clearTimeout(tm);
-              r0.status = r.status; r0.ms = Date.now() - t0;
-              const t = await r.text(); r0.bytes = t.length;
-              let j = null; try { j = JSON.parse(t); } catch (e) { r0.notJson = true; r0.snippet = t.slice(0, 200); }
-              if (j) {
-                const f = flat(first(j) || {}, '', {});
-                r0.keys = Object.keys(f);
-                r0.foreignKeys = Object.keys(f).filter(k => /foreign|room|nuoc|nn/i.test(k)).reduce((a, k) => (a[k] = f[k], a), {});
-                if (!Object.keys(r0.foreignKeys).length) r0.snippet = t.slice(0, 300);
-              }
-            } catch (e) { r0.ms = Date.now() - t0; r0.err = String((e && e.message) || e).slice(0, 120); }
-            out.results.push(r0);
-            console.log(r0.id, r0.status, r0.ms + 'ms', r0.foreignKeys ? Object.keys(r0.foreignKeys).join(',') : (r0.err || r0.snippet || ''));
+          const H = { 'Accept': 'application/json', 'User-Agent': UA };
+          const DAYS = 260;
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          const num = v => { if (v === null || v === undefined || v === '' || typeof v === 'boolean') return null; const n = Number(v); return isFinite(n) ? n : null; };
+          const out = { ok: false, built: new Date().toISOString(), source: 'VNDirect foreigns (số đã chốt cuối phiên) qua GitHub Actions', days: [] };
+          const save = () => { fs.mkdirSync('data', { recursive: true }); fs.writeFileSync('data/history.json', JSON.stringify(out)); };
+
+          /* 1) danh sách mã + sàn từ Vietcap (công khai) */
+          const B = 'https://trading.vietcap.com.vn';
+          const ra = await fetch(B + '/api/price/symbols/getAll', { headers: Object.assign({ Origin: B, Referer: B + '/' }, H) });
+          if (!ra.ok) { out.error = 'Vietcap getAll HTTP ' + ra.status; save(); console.log(out.error); process.exit(1); }
+          const all = await ra.json(), list = Array.isArray(all) ? all : (all && all.data) || [];
+          const exOf = { HSX: 'HOSE', HOSE: 'HOSE', HNX: 'HNX', UPCOM: 'UPCOM' }, ex = {};
+          for (const x of list) if (x && x.type === 'STOCK' && exOf[x.board] && /^[A-Z0-9.]{2,12}$/.test(String(x.symbol))) ex[x.symbol] = exOf[x.board];
+          const syms = Object.keys(ex);
+          console.log('Số mã:', syms.length);
+          if (!syms.length) { out.error = 'Danh sách mã rỗng'; save(); process.exit(1); }
+
+          /* 2) khối ngoại theo ngày của từng mã. Tên trường được DÒ tự động, ghi vào out.mapping */
+          const URL1 = c => 'https://api-finfo.vndirect.com.vn/v4/foreigns?q=code:' + c + '&size=' + DAYS + '&sort=tradingDate:desc';
+          async function one(c) {
+            for (let t = 0; t < 3; t++) {
+              try {
+                const r = await fetch(URL1(c), { headers: H });
+                if (r.status === 429 || r.status >= 500) { await sleep(800 * (t + 1)); continue; }
+                if (!r.ok) return { err: 'HTTP ' + r.status };
+                const j = await r.json(); return { rows: Array.isArray(j && j.data) ? j.data : [] };
+              } catch (e) { await sleep(500 * (t + 1)); }
+            }
+            return { err: 'không kết nối được' };
           }
-          fs.mkdirSync('data', { recursive: true });
-          fs.writeFileSync('data/probe-all.json', JSON.stringify(out, null, 1));
+          let K = null, failed = 0, done = 0; const per = {};
+          const pick = (keys, test, ban) => keys.filter(k => test(k.toLowerCase()) && !(ban && ban(k.toLowerCase()))).sort((a, b) => a.length - b.length)[0] || null;
+          const detect = rec => { const k = Object.keys(rec); const m = { date: pick(k, x => x === 'tradingdate' || x === 'date'), buyQ: pick(k, x => /buy/.test(x) && /(vol|qty)/.test(x), x => /net|put|deal/.test(x)), sellQ: pick(k, x => /sell/.test(x) && /(vol|qty)/.test(x), x => /net|put|deal/.test(x)), buyV: pick(k, x => /buy/.test(x) && /val/.test(x), x => /net|put|deal/.test(x)), sellV: pick(k, x => /sell/.test(x) && /val/.test(x), x => /net|put|deal/.test(x)) }; return m; };
+          const queue = syms.slice();
+          async function worker() {
+            while (queue.length) {
+              const c = queue.shift(), r = await one(c); done++;
+              if (r.err) { failed++; if (failed <= 5) console.log('lỗi', c, r.err); continue; }
+              if (!r.rows.length) continue;
+              if (!K) { out.sample = r.rows[0]; K = detect(r.rows[0]); out.mapping = K; console.log('Ánh xạ:', JSON.stringify(K)); }
+              if (!K.date || !K.buyV || !K.sellV) continue;
+              per[c] = r.rows;
+              await sleep(120);
+            }
+          }
+          await Promise.all(Array.from({ length: 6 }, worker));
+          out.failed = failed; out.symbolsWithData = Object.keys(per).length;
+          if (!K || !K.date || !K.buyV || !K.sellV) { out.error = 'Không dò được tên trường (xem sample/mapping)'; save(); console.log(out.error, JSON.stringify(K)); process.exit(1); }
+
+          /* 3) cộng theo ngày + sàn */
+          const agg = {};
+          for (const c of Object.keys(per)) {
+            const e = ex[c];
+            for (const r of per[c]) {
+              const d = String(r[K.date] || '').slice(0, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+              const bv = num(r[K.buyV]), sv = num(r[K.sellV]); if (bv == null && sv == null) continue;
+              const a = (agg[d] || (agg[d] = { d })), x = (a[e] || (a[e] = { buyV: 0, sellV: 0, buyQ: 0, sellQ: 0, tv: 0, n: 0 }));
+              x.buyV += bv || 0; x.sellV += sv || 0; x.buyQ += (K.buyQ ? num(r[K.buyQ]) : 0) || 0; x.sellQ += (K.sellQ ? num(r[K.sellQ]) : 0) || 0; x.n++;
+            }
+          }
+          let days = Object.values(agg).filter(a => ['HOSE', 'HNX', 'UPCOM'].reduce((s, k) => s + (a[k] ? a[k].buyV + a[k].sellV : 0), 0) > 0).sort((a, b) => a.d < b.d ? -1 : 1);
+          /* bỏ ngày thiếu dữ liệu nặng (ít hơn 60% số mã của ngày đầy đủ nhất) */
+          const cnt = a => ['HOSE', 'HNX', 'UPCOM'].reduce((s, k) => s + (a[k] ? a[k].n : 0), 0), mx = Math.max(0, ...days.map(cnt));
+          const dropped = days.filter(a => cnt(a) < mx * 0.6).map(a => a.d); days = days.filter(a => cnt(a) >= mx * 0.6);
+          out.days = days; out.dropped = dropped; out.ok = days.length >= 2;
+          const last = days[days.length - 1];
+          if (last) { out.lastDay = last.d; out.lastDayTy = {}; for (const k of ['HOSE', 'HNX', 'UPCOM']) if (last[k]) out.lastDayTy[k] = { mua: Math.round(last[k].buyV / 1e7) / 100, ban: Math.round(last[k].sellV / 1e7) / 100, mãCó: last[k].n }; }
+          save();
+          console.log('Số ngày:', days.length, '| ngày cuối:', out.lastDay, '| tỷ đồng:', JSON.stringify(out.lastDayTy), '| mã lỗi:', failed);
+          if (!out.ok) process.exit(1);
           EOF
       - name: Luu ket qua
         if: always()
@@ -64,5 +103,4 @@ jobs:
           git config user.name "fx-bot"
           git config user.email "fx-bot@users.noreply.github.com"
           git add data
-          git diff --cached --quiet || (git commit -m "probe-all $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
-          
+          git diff --cached --quiet || (git commit -m "history $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
