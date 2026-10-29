@@ -1,15 +1,10 @@
-# Lấy dữ liệu khối ngoại SSI iBoard mỗi 10 phút trong giờ giao dịch, lưu vào data/foreign.json
-# Đặt file này tại: .github/workflows/foreign.yml  (repo phải ở chế độ Public)
-name: fetch-foreign
+# Dò nhiều API khối ngoại/room từ máy chủ GitHub, ghi kết quả vào data/probe-all.json
+# Đặt tại: .github/workflows/probe-api.yml  -> Actions > probe-api > Run workflow (chạy tay, trong giờ giao dịch 09:00-15:00)
+name: probe-api
 on:
-  schedule:
-    - cron: '*/10 2-8 * * 1-5'   # 09:00-15:50 giờ VN, thứ 2-6 (GitHub dùng giờ UTC)
-  workflow_dispatch: {}          # bấm tay: tab Actions > fetch-foreign > Run workflow
+  workflow_dispatch: {}
 permissions:
   contents: write
-concurrency:
-  group: fx
-  cancel-in-progress: false
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -18,129 +13,56 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Lay du lieu khoi ngoai
+      - name: Do API
         run: |
           node --input-type=module - <<'EOF'
           import fs from 'node:fs';
           const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-          const num = v => { if (v === null || v === undefined || v === '' || typeof v === 'boolean') return null; const n = Number(v); return isFinite(n) ? n : null; };
-          const sleep = ms => new Promise(r => setTimeout(r, ms));
-          const probe = { at: new Date().toISOString(), ssi: [], vietcap: {} };
-          const day = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
-          const KEYS = ['price', 'ref', 'buyQ', 'sellQ', 'buyV', 'sellV', 'room', 'totalRoom', 'tradedV', 'tradedQ'];
-          const summarize = (rows, map, via) => {
-            const fields = {};
-            for (const ex of ['HOSE', 'HNX', 'UPCOM']) {
-              const sub = rows.filter(r => r.ex === ex), found = {};
-              KEYS.forEach(k => { if (map[k] && sub.some(r => r[k] != null)) found[k] = map[k]; });
-              fields[ex.toLowerCase()] = { n: sub.length, via, found, missing: KEYS.filter(k => !found[k]) };
-            }
-            return fields;
-          };
-          const hasForeign = rows => rows.some(r => r.buyQ != null || r.sellQ != null || r.buyV != null || r.sellV != null);
-
-          /* ---- Nguon 1: SSI iBoard GraphQL ---- */
-          async function fromSSI() {
-            const HOSTS = ['https://wgateway-iboard.ssi.com.vn/graphql', 'https://iboard.ssi.com.vn/gateway/graphql'];
-            const Q = 'query stockRealtimes($exchange: String) { stockRealtimes(exchange: $exchange) { stockSymbol exchange refPrice matchedPrice nmTotalTradedQty buyForeignQtty buyForeignValue sellForeignQtty sellForeignValue remainForeignQtty } }';
-            const rows = [], errors = {};
-            for (const ex of ['hose', 'hnx', 'upcom']) {
-              let arr = null;
-              for (const h of HOSTS) {
-                const a = { ex, host: h };
-                try {
-                  const r = await fetch(h, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Origin': 'https://iboard.ssi.com.vn', 'Referer': 'https://iboard.ssi.com.vn/', 'User-Agent': UA }, body: JSON.stringify({ operationName: 'stockRealtimes', variables: { exchange: ex }, query: Q }) });
-                  a.status = r.status;
-                  const t = await r.text(); let j = null;
-                  try { j = JSON.parse(t); } catch (e) { a.err = 'khong phai JSON'; }
-                  const x = j && j.data && j.data.stockRealtimes;
-                  if (Array.isArray(x) && x.length) { arr = x; a.count = x.length; }
-                  else if (j && j.errors) a.err = String((j.errors[0] && j.errors[0].message) || '').slice(0, 160);
-                } catch (e) { a.err = String((e && e.message) || e).slice(0, 120); }
-                probe.ssi.push(a);
-                if (arr) break;
+          const V = 'https://trading.vietcap.com.vn';
+          const SYM = ['FPT', 'SHS', 'BSR'];
+          const JH = o => Object.assign({ 'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': UA }, o || {});
+          const C = [
+            { id: 'vietcap-getList', note: 'Bảng giá Vietcap (đang dùng làm dự phòng)', url: V + '/api/price/symbols/getList', method: 'POST', body: { symbols: SYM }, headers: JH({ Origin: V, Referer: V + '/' }) },
+            { id: 'vietcap-top-stock', note: 'Vietcap top-stock (theo repo LySyaoran/API-Vietcap-Price)', url: V + '/api/market-data-service/v1/tickers/price/top-stock', method: 'POST', body: { tickers: SYM }, headers: JH({ Origin: V, Referer: V + '/' }) },
+            { id: 'ssi-graphql-1', note: 'SSI GraphQL host 1', url: 'https://wgateway-iboard.ssi.com.vn/graphql', method: 'POST', body: { operationName: 'stockRealtimes', variables: { exchange: 'hnx' }, query: 'query stockRealtimes($exchange: String) { stockRealtimes(exchange: $exchange) { stockSymbol exchange buyForeignQtty sellForeignQtty buyForeignValue sellForeignValue remainForeignQtty } }' }, headers: JH({ Origin: 'https://iboard.ssi.com.vn', Referer: 'https://iboard.ssi.com.vn/' }) },
+            { id: 'ssi-graphql-2', note: 'SSI GraphQL host 2', url: 'https://iboard.ssi.com.vn/gateway/graphql', method: 'POST', body: { operationName: 'stockRealtimes', variables: { exchange: 'hnx' }, query: 'query stockRealtimes($exchange: String) { stockRealtimes(exchange: $exchange) { stockSymbol exchange buyForeignQtty sellForeignQtty buyForeignValue sellForeignValue remainForeignQtty } }' }, headers: JH({ Origin: 'https://iboard.ssi.com.vn', Referer: 'https://iboard.ssi.com.vn/' }) },
+            { id: 'ssi-rest-hnx', note: 'SSI REST HNX (Worker đang dùng)', url: 'https://iboard-query.ssi.com.vn/stock/exchange/hnx', method: 'GET', headers: JH() },
+            { id: 'ssi-rest-fpt', note: 'CHƯA XÁC NHẬN: SSI REST 1 mã', url: 'https://iboard-query.ssi.com.vn/v2/stock/fpt', method: 'GET', headers: JH() },
+            { id: 'vnd-stock-prices', note: 'VNDirect giá (api-finfo chạy được từ Worker theo ghi chú bản 20)', url: 'https://api-finfo.vndirect.com.vn/v4/stock_prices?q=code:FPT&size=2&sort=date:desc', method: 'GET', headers: JH() },
+            { id: 'vnd-foreigns', note: 'CHƯA XÁC NHẬN: VNDirect khối ngoại theo ngày', url: 'https://api-finfo.vndirect.com.vn/v4/foreigns?q=code:FPT&size=2&sort=tradingDate:desc', method: 'GET', headers: JH() },
+            { id: 'vnd-foreigns-2', note: 'CHƯA XÁC NHẬN: VNDirect khối ngoại (finfo-api)', url: 'https://finfo-api.vndirect.com.vn/v4/foreigns?q=code:FPT&size=2&sort=tradingDate:desc', method: 'GET', headers: JH() }
+          ];
+          const flat = (o, p, out, d = 0) => { if (d > 4) return out; for (const k of Object.keys(o || {})) { const v = o[k], path = p ? p + '.' + k : k; if (Array.isArray(v)) { if (v.length && typeof v[0] === 'object') flat(v[0], path + '[0]', out, d + 1); } else if (v && typeof v === 'object') flat(v, path, out, d + 1); else out[path] = v; } return out; };
+          const first = j => Array.isArray(j) ? j[0] : (j && (Array.isArray(j.data) ? j.data[0] : Array.isArray(j.content) ? j.content[0] : (j.data && Array.isArray(j.data.stockRealtimes) ? j.data.stockRealtimes[0] : (j.data && typeof j.data === 'object' ? j.data : j)))) || null;
+          const out = { at: new Date().toISOString(), results: [] };
+          for (const c of C) {
+            const r0 = { id: c.id, note: c.note, url: c.url, status: 0, ms: 0 };
+            const t0 = Date.now();
+            try {
+              const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 12000);
+              const r = await fetch(c.url, { method: c.method, headers: c.headers, body: c.body ? JSON.stringify(c.body) : undefined, signal: ac.signal });
+              clearTimeout(tm);
+              r0.status = r.status; r0.ms = Date.now() - t0;
+              const t = await r.text(); r0.bytes = t.length;
+              let j = null; try { j = JSON.parse(t); } catch (e) { r0.notJson = true; r0.snippet = t.slice(0, 200); }
+              if (j) {
+                const f = flat(first(j) || {}, '', {});
+                r0.keys = Object.keys(f);
+                r0.foreignKeys = Object.keys(f).filter(k => /foreign|room|nuoc|nn/i.test(k)).reduce((a, k) => (a[k] = f[k], a), {});
+                if (!Object.keys(r0.foreignKeys).length) r0.snippet = t.slice(0, 300);
               }
-              if (!arr) { errors[ex] = 'SSI GraphQL khong tra du lieu'; continue; }
-              for (const o of arr) {
-                const s = String(o.stockSymbol || '').toUpperCase();
-                if (!/^[A-Z0-9.]{2,12}$/.test(s)) continue;
-                rows.push({ s, ex: ex.toUpperCase(), price: num(o.matchedPrice), ref: num(o.refPrice), buyQ: num(o.buyForeignQtty), sellQ: num(o.sellForeignQtty), buyV: num(o.buyForeignValue), sellV: num(o.sellForeignValue), room: num(o.remainForeignQtty), totalRoom: null, tradedV: null, tradedQ: num(o.nmTotalTradedQty) });
-              }
-            }
-            const map = { price: 'matchedPrice', ref: 'refPrice', buyQ: 'buyForeignQtty', sellQ: 'sellForeignQtty', buyV: 'buyForeignValue', sellV: 'sellForeignValue', room: 'remainForeignQtty', tradedQ: 'nmTotalTradedQty' };
-            return { rows, errors, source: 'SSI iBoard GraphQL (qua GitHub Actions)', fields: summarize(rows, map, 'github-actions:ssi'), hasF: hasForeign(rows) };
-          }
-
-          /* ---- Nguon 2: Vietcap price board (cong khai, khong khoa). Ten truong duoc DO tu dong va ghi vao fields ---- */
-          async function fromVietcap() {
-            const B = 'https://trading.vietcap.com.vn';
-            const H = { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Origin': B, 'Referer': B + '/', 'User-Agent': UA };
-            const a = probe.vietcap;
-            const r = await fetch(B + '/api/price/symbols/getAll', { headers: H });
-            a.listStatus = r.status;
-            if (!r.ok) return null;
-            const all = await r.json();
-            const listAll = Array.isArray(all) ? all : (all && all.data) || [];
-            const exOf = { HSX: 'HOSE', HOSE: 'HOSE', HNX: 'HNX', UPCOM: 'UPCOM' };
-            const bySym = {};
-            for (const x of listAll) { if (x && x.type === 'STOCK' && exOf[x.board] && /^[A-Z0-9.]{2,12}$/.test(String(x.symbol))) bySym[x.symbol] = exOf[x.board]; }
-            const syms = Object.keys(bySym); a.listCount = syms.length;
-            if (!syms.length) return null;
-            const items = [];
-            for (let i = 0; i < syms.length; i += 100) {
-              const rr = await fetch(B + '/api/price/symbols/getList', { method: 'POST', headers: H, body: JSON.stringify({ symbols: syms.slice(i, i + 100) }) });
-              if (!rr.ok) { a.err = 'getList HTTP ' + rr.status + ' tai lo ' + (i / 100); break; }
-              const j = await rr.json(); items.push(...(Array.isArray(j) ? j : (j && j.data) || []));
-              await sleep(250);
-            }
-            a.items = items.length;
-            if (!items.length) return null;
-            const flat = (o, p, out) => { for (const k of Object.keys(o || {})) { const v = o[k], path = p ? p + '.' + k : k; if (v && typeof v === 'object') { if (!Array.isArray(v)) flat(v, path, out); } else out[path] = v; } return out; };
-            const f0 = flat(items[0], '', {}); a.sampleKeys = Object.keys(f0); a.sample = f0;
-            const keys = Object.keys(f0), low = k => k.toLowerCase();
-            const find = (test, prefer) => { const c = keys.filter(k => test(low(k))).sort((x, y) => x.length - y.length); if (prefer) { const p = c.filter(k => prefer(low(k))); if (p.length) return p[0]; } return c[0] || null; };
-            const K = {
-              sym: find(k => /(^|\.)(symbol|ticker|stocksymbol)$/.test(k)),
-              price: find(k => /(^|\.)(matchprice|matchedprice|lastprice|closeprice)$/.test(k)),
-              ref: find(k => /(^|\.)refprice$/.test(k)),
-              buyQ: find(k => /foreign/.test(k) && /buy/.test(k) && /(vol|qty|quant)/.test(k)),
-              sellQ: find(k => /foreign/.test(k) && /sell/.test(k) && /(vol|qty|quant)/.test(k)),
-              buyV: find(k => /foreign/.test(k) && /buy/.test(k) && /val/.test(k)),
-              sellV: find(k => /foreign/.test(k) && /sell/.test(k) && /val/.test(k)),
-              room: find(k => /room/.test(k) && !/total/.test(k), k => /(current|remain|avail)/.test(k)),
-              totalRoom: find(k => /room/.test(k) && /total/.test(k)),
-              tradedQ: find(k => /(accumulatedvolume|totalmatchvolume|totalvolume|nmtotaltradedqty)$/.test(k)),
-              tradedV: find(k => /(accumulatedvalue|totalmatchvalue|totalvalue|nmtotaltradedvalue)$/.test(k))
-            };
-            a.mapping = K;
-            if (!K.sym) { a.err = 'khong tim thay truong ma CK trong getList'; return null; }
-            const rows = [];
-            for (const it of items) {
-              const f = flat(it, '', {}), s = String(f[K.sym] || '').toUpperCase(), ex = bySym[s];
-              if (!ex) continue;
-              const g = k => (K[k] ? num(f[K[k]]) : null);
-              rows.push({ s, ex, price: g('price'), ref: g('ref'), buyQ: g('buyQ'), sellQ: g('sellQ'), buyV: g('buyV'), sellV: g('sellV'), room: g('room'), totalRoom: g('totalRoom'), tradedV: g('tradedV'), tradedQ: g('tradedQ') });
-            }
-            const map = {}; for (const k of KEYS) if (K[k]) map[k] = K[k];
-            return { rows, errors: {}, source: 'Vietcap price board (qua GitHub Actions)', fields: summarize(rows, map, 'github-actions:vietcap'), hasF: hasForeign(rows) };
-          }
-
-          let res = await fromSSI();
-          if (!res.hasF) {
-            try { const v = await fromVietcap(); if (v && v.hasF) res = v; } catch (e) { probe.vietcap.err = String((e && e.message) || e).slice(0, 160); }
+            } catch (e) { r0.ms = Date.now() - t0; r0.err = String((e && e.message) || e).slice(0, 120); }
+            out.results.push(r0);
+            console.log(r0.id, r0.status, r0.ms + 'ms', r0.foreignKeys ? Object.keys(r0.foreignKeys).join(',') : (r0.err || r0.snippet || ''));
           }
           fs.mkdirSync('data', { recursive: true });
-          fs.writeFileSync('data/probe.json', JSON.stringify(probe, null, 1));
-          const act = res.rows.reduce((s, r) => s + (r.buyQ || 0) + (r.sellQ || 0), 0);
-          if (!res.rows.length || !res.hasF) { console.log('Khong co du lieu khoi ngoai tu nguon nao - xem data/probe.json'); process.exit(1); }
-          if (act <= 0) { console.log('Chua co giao dich khoi ngoai (truoc gio mo cua?) - giu nguyen file cu'); process.exit(0); }
-          fs.writeFileSync('data/foreign.json', JSON.stringify({ ok: true, hasForeign: true, day, asOf: new Date().toISOString(), source: res.source, fields: res.fields, errors: res.errors, rows: res.rows }));
-          console.log('OK', res.rows.length, 'ma tu', res.source);
+          fs.writeFileSync('data/probe-all.json', JSON.stringify(out, null, 1));
           EOF
-      - name: Luu ket qua vao repo
+      - name: Luu ket qua
         if: always()
         run: |
           git config user.name "fx-bot"
           git config user.email "fx-bot@users.noreply.github.com"
           git add data
-          git diff --cached --quiet || (git commit -m "foreign $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
+          git diff --cached --quiet || (git commit -m "probe-all $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
+          
