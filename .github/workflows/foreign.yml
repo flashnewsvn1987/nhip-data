@@ -107,8 +107,8 @@ jobs:
               sellQ: find(k => /foreign/.test(k) && /sell/.test(k) && /(vol|qty|quant)/.test(k)),
               buyV: find(k => /foreign/.test(k) && /buy/.test(k) && /val/.test(k)),
               sellV: find(k => /foreign/.test(k) && /sell/.test(k) && /val/.test(k)),
-              room: find(k => /foreign/.test(k) && /room/.test(k) && !/total/.test(k), k => /(current|remain|avail)/.test(k)),
-              totalRoom: find(k => /foreign/.test(k) && /room/.test(k) && /total/.test(k)),
+              room: find(k => /room/.test(k) && !/total/.test(k), k => /(current|remain|avail)/.test(k)),
+              totalRoom: find(k => /room/.test(k) && /total/.test(k)),
               tradedQ: find(k => /(accumulatedvolume|totalmatchvolume|totalvolume|nmtotaltradedqty)$/.test(k)),
               tradedV: find(k => /(accumulatedvalue|totalmatchvalue|totalvalue|nmtotaltradedvalue)$/.test(k))
             };
@@ -144,4 +144,3 @@ jobs:
           git config user.email "fx-bot@users.noreply.github.com"
           git add data
           git diff --cached --quiet || (git commit -m "foreign $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
-          
