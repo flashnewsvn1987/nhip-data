@@ -1,0 +1,275 @@
+{
+  "built": "2026-10-29T05:54:29.493Z",
+  "note": "Dò địa chỉ chưa xác nhận",
+  "results": [
+    {
+      "symbol": "FPT",
+      "section": "BALANCE_SHEET",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/FPT/financial-statement?section=BALANCE_SHEET",
+      "status": 200,
+      "bytes": 229888,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:30.827639051",
+        "traceId": "string:a43cf53ac12ac33ace8b7bf27e4ec2ed",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Successful",
+        "exception": "object",
+        "successful": "boolean",
+        "data": {
+          "years": {
+            "type": "array",
+            "length": 8,
+            "first": null
+          },
+          "quarters": {
+            "type": "array",
+            "length": 34,
+            "first": null
+          }
+        }
+      },
+      "dataPreview": "{\"years\":[{\"organCode\":\"FPT\",\"ticker\":\"FPT\",\"createDate\":null,\"updateDate\":\"2019-01-31T10:37:05.36\",\"yearReport\":2018,\"lengthReport\":5,\"publicDate\":\"2019-03-06T00:00:00\",\"bsa1\":18406087226041,\"bsa2\":3925727206293,\"bsa3\":2682437141849,\"bsa4\":1243290064444,\"bsa5\":5568623727137,\"bsa6\":0,\"bsa7\":0,\"bsa8\":6426946279074,\"bsa9\":5561545801834,\"bsa10\":218427501076,\"bsa11\":0,\"bsa12\":251954356007,\"bsa13\":658775479875,\"bsa14\":-264666908906,\"bsa15\":1340687216347,\"bsa16\":1401302666378,\"bsa17\":-60615450031,\"bsa18\":1144102797190,\"bsa19\":962477975930,\"bsa20\":138812602015,\"bsa21\":42812219245,\"bsa22\":0,\"bsa23\":11"
+    },
+    {
+      "symbol": "FPT",
+      "section": "NOTE",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/FPT/financial-statement?section=NOTE",
+      "status": 200,
+      "bytes": 134505,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:31.894536436",
+        "traceId": "string:b857b5783f29bbad053d7ed04ea13ad9",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Successful",
+        "exception": "object",
+        "successful": "boolean",
+        "data": {
+          "years": {
+            "type": "array",
+            "length": 8,
+            "first": null
+          },
+          "quarters": {
+            "type": "array",
+            "length": 34,
+            "first": null
+          }
+        }
+      },
+      "dataPreview": "{\"years\":[{\"organCode\":\"FPT\",\"ticker\":\"FPT\",\"createDate\":\"2019-03-06T16:01:57.857\",\"updateDate\":\"2019-03-06T16:01:57.833\",\"yearReport\":2018,\"lengthReport\":5,\"publicDate\":\"2019-03-06T00:00:00\",\"noc1\":3925727206293,\"noc2\":60166021396,\"noc3\":2622271120453,\"noc4\":0,\"noc5\":1243290064444,\"noc6\":5568623727137,\"noc7\":0,\"noc8\":0,\"noc9\":0,\"noc10\":658775479875,\"noc11\":0,\"noc12\":0,\"noc13\":0,\"noc14\":658775479875,\"noc15\":1401302666378,\"noc16\":79165032088,\"noc17\":0,\"noc18\":142325344375,\"noc19\":393823125241,\"noc20\":0,\"noc21\":785989164674,\"noc22\":0,\"noc23\":0,\"noc24\":0,\"noc25\":0,\"noc26\":0,\"noc27\":0,\"noc28\":0,\"n"
+    },
+    {
+      "symbol": "FPT",
+      "section": "NOTES",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/FPT/financial-statement?section=NOTES",
+      "status": 200,
+      "bytes": 371,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:32.660004596",
+        "traceId": "string:32c8af07f32ee2144bfc035070e81448",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "FPT",
+      "section": "NOTE_BS",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/FPT/financial-statement?section=NOTE_BS",
+      "status": 200,
+      "bytes": 373,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:33.318352891",
+        "traceId": "string:c50ba5c274c3393410fb0a3ca305a42d",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "FPT",
+      "section": "NOTE_IS",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/FPT/financial-statement?section=NOTE_IS",
+      "status": 200,
+      "bytes": 373,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:33.973242641",
+        "traceId": "string:bc44205fcbfa0aa9f787fb5f577c594e",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "FPT",
+      "section": "FINANCIAL_NOTE",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/FPT/financial-statement?section=FINANCIAL_NOTE",
+      "status": 200,
+      "bytes": 380,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:34.625653056",
+        "traceId": "string:88c33ecc8bd30c8a0fa11f987c97c054",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "VCB",
+      "section": "BALANCE_SHEET",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/VCB/financial-statement?section=BALANCE_SHEET",
+      "status": 200,
+      "bytes": 209535,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:35.288203601",
+        "traceId": "string:bc40f3489817aa6ca375a2da5a5b3735",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Successful",
+        "exception": "object",
+        "successful": "boolean",
+        "data": {
+          "years": {
+            "type": "array",
+            "length": 8,
+            "first": null
+          },
+          "quarters": {
+            "type": "array",
+            "length": 34,
+            "first": null
+          }
+        }
+      },
+      "dataPreview": "{\"years\":[{\"organCode\":\"VCB\",\"ticker\":\"VCB\",\"createDate\":null,\"updateDate\":\"2024-02-20T15:34:19.13\",\"yearReport\":2018,\"lengthReport\":5,\"publicDate\":\"2019-06-30T00:00:00\",\"bsa1\":0,\"bsa2\":12792045000000,\"bsa3\":0,\"bsa4\":0,\"bsa5\":0,\"bsa6\":0,\"bsa7\":0,\"bsa8\":0,\"bsa9\":0,\"bsa10\":0,\"bsa11\":0,\"bsa12\":0,\"bsa13\":0,\"bsa14\":0,\"bsa15\":0,\"bsa16\":0,\"bsa17\":0,\"bsa18\":0,\"bsa19\":0,\"bsa20\":0,\"bsa21\":0,\"bsa22\":0,\"bsa23\":0,\"bsa24\":0,\"bsa25\":0,\"bsa26\":0,\"bsa27\":0,\"bsa28\":0,\"bsa29\":6527466000000,\"bsa30\":4459292000000,\"bsa31\":10534068000000,\"bsa32\":-6074776000000,\"bsa33\":0,\"bsa34\":0,\"bsa35\":0,\"bsa36\":2068174000000,\"bsa"
+    },
+    {
+      "symbol": "VCB",
+      "section": "NOTE",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/VCB/financial-statement?section=NOTE",
+      "status": 200,
+      "bytes": 156391,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:36.104638625",
+        "traceId": "string:0fb5c45a38f5888f8d71a72d98543cc7",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Successful",
+        "exception": "object",
+        "successful": "boolean",
+        "data": {
+          "years": {
+            "type": "array",
+            "length": 8,
+            "first": null
+          },
+          "quarters": {
+            "type": "array",
+            "length": 34,
+            "first": null
+          }
+        }
+      },
+      "dataPreview": "{\"years\":[{\"organCode\":\"VCB\",\"ticker\":\"VCB\",\"createDate\":\"2019-01-23T10:48:55.303\",\"updateDate\":\"2026-01-05T10:03:42.703\",\"yearReport\":2018,\"lengthReport\":5,\"publicDate\":\"2019-06-30T00:00:00\",\"nob1\":631866758000000,\"nob2\":624073743000000,\"nob3\":3930917000000,\"nob4\":3855993000000,\"nob5\":1000000000,\"nob6\":0,\"nob7\":5105000000,\"nob8\":0,\"nob9\":0,\"nob10\":0,\"nob11\":631866758000000,\"nob12\":120238625000000,\"nob13\":14499324000000,\"nob14\":208551242000000,\"nob15\":163734487000000,\"nob16\":29340404000000,\"nob17\":0,\"nob18\":15476351000000,\"nob19\":28873357000000,\"nob20\":0,\"nob21\":0,\"nob22\":0,\"nob23\":0,\"nob24\":0"
+    },
+    {
+      "symbol": "VCB",
+      "section": "NOTES",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/VCB/financial-statement?section=NOTES",
+      "status": 200,
+      "bytes": 371,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:36.862572247",
+        "traceId": "string:9e902c8f9837c85e1189c46adbabf671",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "VCB",
+      "section": "NOTE_BS",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/VCB/financial-statement?section=NOTE_BS",
+      "status": 200,
+      "bytes": 373,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:37.515889896",
+        "traceId": "string:834280501f6460d1183b23396e16478f",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "VCB",
+      "section": "NOTE_IS",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/VCB/financial-statement?section=NOTE_IS",
+      "status": 200,
+      "bytes": 373,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:38.171436874",
+        "traceId": "string:ae89e41b4606f4021847d9e59afb9730",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "VCB",
+      "section": "FINANCIAL_NOTE",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/company/VCB/financial-statement?section=FINANCIAL_NOTE",
+      "status": 200,
+      "bytes": 380,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:38.822644833",
+        "traceId": "string:cdb599517b352ed885c757100b715467",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:Bad request error - {ERROR =Failed to co",
+        "successful": "boolean",
+        "data": "object"
+      }
+    },
+    {
+      "symbol": "FPT",
+      "section": "metrics",
+      "url": "https://iq.vietcap.com.vn/api/iq-insight-service/v1/statistics-financial",
+      "status": 404,
+      "bytes": 192,
+      "shape": {
+        "serverDateTime": "string:2026-10-29T05:54:39.479171441",
+        "traceId": "string:6578e5e74b44c3b5b87a34951c9ebb1a",
+        "status": "number",
+        "code": "number",
+        "msg": "string:Error",
+        "exception": "string:404 NOT_FOUND",
+        "successful": "boolean",
+        "data": "object"
+      }
+    }
+  ]
+}
