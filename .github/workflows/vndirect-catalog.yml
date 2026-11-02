@@ -1,0 +1,95 @@
+# Dựng DANH MỤC ĐẦY ĐỦ sàn + mã theo VNDirect -> data/vndirect-catalog.json
+# Đặt tại: .github/workflows/vndirect-catalog.yml
+# Chạy tay lần đầu: Actions > vndirect-catalog > Run workflow. Sau đó tự chạy mỗi thứ Hai 07:30 giờ VN.
+# Cách làm: dò TỪNG loại chứng khoán (cổ phiếu, ETF, quỹ, chứng quyền...) riêng; loại nào VNDirect trả rỗng
+# hoặc báo lỗi thì ghi vào mục "probe" rồi bỏ qua, không làm hỏng các loại còn lại.
+# An toàn: nếu số cổ phiếu < 500 thì KHÔNG ghi đè file cũ.
+# Lưu ý: đây là endpoint công khai của VNDirect, không có hợp đồng sử dụng dữ liệu.
+name: vndirect-catalog
+on:
+  schedule:
+    - cron: '30 0 * * 1'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: vndirect-catalog
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Dung danh muc
+        run: |
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+          const HOSTS = ['https://api-finfo.vndirect.com.vn', 'https://finfo-api.vndirect.com.vn'];
+          const TYPES = ['STOCK', 'ETF', 'IFC', 'FUND', 'CW', 'BOND'];
+          const FIELDS = 'code,companyName,shortName,floor,type,status,industryName';
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          async function page(host, type, p) {
+            const qs = new URLSearchParams({ q: 'type:' + type + '~status:LISTED', fields: FIELDS, sort: 'code', size: '500', page: String(p) });
+            for (let t = 0; t < 3; t++) {
+              try {
+                const r = await fetch(host + '/v4/stocks?' + qs, { headers: { Accept: 'application/json', 'User-Agent': UA } });
+                if (r.ok) return await r.json();
+                if (r.status === 400 || r.status === 404) return { error: 'HTTP ' + r.status };
+              } catch (e) { }
+              await sleep(1500 * (t + 1));
+            }
+            return { error: 'khong goi duoc' };
+          }
+          async function fetchType(type) {
+            for (const host of HOSTS) {
+              const rows = []; let err = null, total = 1;
+              for (let p = 1; p <= 10 && p <= total; p++) {
+                const j = await page(host, type, p);
+                if (j.error) { err = j.error; break; }
+                const d = Array.isArray(j.data) ? j.data : [];
+                rows.push(...d); total = Number(j.totalPages) || 1;
+                if (!d.length) break;
+              }
+              if (rows.length) return { rows, host, error: null };
+              if (!err) return { rows: [], host, error: 'rong' };
+            }
+            return { rows: [], host: null, error: 'loi' };
+          }
+          const probe = {}, seen = {}, syms = [], exchanges = {};
+          for (const type of TYPES) {
+            const res = await fetchType(type);
+            let n = 0;
+            for (const x of res.rows) {
+              const code = String(x.code || '').toUpperCase();
+              if (!/^[A-Z0-9._-]{2,16}$/.test(code)) continue;
+              const key = code + '|' + type;
+              if (seen[key]) continue;
+              seen[key] = 1; n++;
+              const floor = String(x.floor || 'KHAC').toUpperCase();
+              exchanges[floor] = exchanges[floor] || {};
+              exchanges[floor][type] = (exchanges[floor][type] || 0) + 1;
+              syms.push([code, floor, type, x.shortName || x.companyName || '', x.industryName || '']);
+            }
+            probe[type] = { count: n, host: res.host, error: res.error };
+            console.log(type, n, res.error || 'ok');
+          }
+          const stocks = probe.STOCK ? probe.STOCK.count : 0;
+          if (stocks < 500) { console.log('So co phieu qua it - giu nguyen file cu'); process.exit(1); }
+          syms.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[2] < b[2] ? -1 : 1);
+          console.log('San:', JSON.stringify(exchanges));
+          fs.mkdirSync('data', { recursive: true });
+          fs.writeFileSync('data/vndirect-catalog.json', JSON.stringify({ ok: true, built: new Date().toISOString(), source: 'VNDirect finfo /v4/stocks qua GitHub Actions', count: syms.length, exchanges, probe, cols: ['code', 'floor', 'type', 'name', 'industry'], syms }));
+          JS
+      - name: Luu ket qua
+        if: always()
+        run: |
+          git config user.name "fx-bot"
+          git config user.email "fx-bot@users.noreply.github.com"
+          git add data/vndirect-catalog.json
+          git diff --cached --quiet || (git commit -m "vndirect-catalog $(date -u +%FT%TZ)" && git pull --rebase -q && git push)
+          
