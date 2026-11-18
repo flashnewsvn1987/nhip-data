@@ -1,1 +1,1 @@
-{"at":"2026-11-17T18:41:31.583Z","ok":true,"mapping":{"date":"tradingDate","buyQ":"buyVol","sellQ":"sellVol","buyV":"buyVal","sellV":"sellVal"},"failed":0,"symbolsWithData":1517,"days":271,"firstDay":"2025-10-15","lastDay":"2026-11-17","newDays":259}
+{"at":"2026-11-18T18:16:53.374Z","ok":false,"listHttp":400,"error":"Danh sách mã quá ít (0)"}
