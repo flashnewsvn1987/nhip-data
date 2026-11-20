@@ -1,1 +1,1 @@
-{"at":"2026-11-19T18:26:53.233Z","ok":true,"mapping":{"date":"tradingDate","buyQ":"buyVol","sellQ":"sellVol","buyV":"buyVal","sellV":"sellVal"},"failed":0,"symbolsWithData":1517,"days":273,"firstDay":"2025-10-15","lastDay":"2026-11-19","newDays":259}
+{"at":"2026-11-20T17:55:21.187Z","ok":true,"mapping":{"date":"tradingDate","buyQ":"buyVol","sellQ":"sellVol","buyV":"buyVal","sellV":"sellVal"},"failed":0,"symbolsWithData":1519,"days":274,"firstDay":"2025-10-15","lastDay":"2026-11-20","newDays":259}
